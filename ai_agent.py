@@ -5,10 +5,33 @@ import json
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-)
+
+def get_api_key():
+
+    # Local: .env file. Streamlit Cloud: app secrets.
+    key = os.getenv("OPENAI_API_KEY")
+
+    if not key:
+        try:
+            import streamlit as st
+            key = st.secrets.get("OPENAI_API_KEY")
+        except Exception:
+            key = None
+
+    if not key:
+        raise RuntimeError(
+            "OPENAI_API_KEY not found. Add it to your .env file "
+            "(local) or to the app Secrets on Streamlit Cloud."
+        )
+
+    return key
+
+
+def get_client():
+    return OpenAI(
+        api_key=get_api_key(),
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+    )
 
 def generate_dashboard_plan(df, user_prompt):
 
@@ -62,7 +85,7 @@ Rules:
 - The table should show the most relevant columns for the request.
 """
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gemini-2.5-flash",
         messages=[
             {
